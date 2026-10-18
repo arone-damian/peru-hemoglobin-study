@@ -1,0 +1,406 @@
+## 
+
+---
+title: "Modelado Bioestadístico de Hemoglobina y Altitud en Gestantes Peruanas"
+subtitle: "Prevalencia, Regresión Multivariada y Curvas de Percentiles"
+format: html
+editor: visual
+---
+
+```{r}
+#install.packages ("haven") 
+#install.packages("gt")
+```
+
+```{r}
+# Cargar los datos desde el archivo CSV 
+library(haven) 
+library(dplyr)
+library(ggplot2) 
+library(sf) 
+library(tidyverse) 
+```
+
+## *BASE DE DATOS: SIEN - Sistema de información del Estado Nutricional de gestantes Perú - INS/CENAN (Instituto Nacional de Salud - Centro Nacional de Alimentación y Nutrición)*
+
+*Leer los datos:*
+
+```{r}
+archivo <- "Limpio.csv" 
+datos <- read.csv(archivo)
+```
+
+### INTRODUCCION
+
+**La anemia gestacional es un problema de salud pública global,** vinculado a complicaciones como bajo peso al nacer, parto prematuro y mortalidad materna.
+
+Aunque la OMS proporciona rangos de referencia para definir la anemia durante el embarazo, estas guías se basan en estudios realizados en contextos europeos y norteamericanos, sin considerar las particularidades de países como el Perú.
+
+En el Perú, **las desigualdades socioeconómicas y la variabilidad geográfica** —que abarca regiones costeras, andinas y amazónicas— **pueden influir en los niveles de hemoglobina y en los resultados materno-fetales.**
+
+La relación entre la edad gestacional y los niveles de hemoglobina en mujeres gestantes peruanas sigue siendo poco estudiada, lo que limita la capacidad de generar guías clínicas adaptadas al contexto local.
+
+**Nuestro estudio busca determinar la asociación entre la edad gestacional y los niveles de hemoglobina en las mujeres gestantes en el Perú,** y contribuir a su entendimiento analizando sus factores asociados.
+
+*Filtrar los datos para el año 2022*
+
+```{r}
+datos_2022 <- datos %>% filter(year == 2022)
+# Filtrar solo los casos completos y sobrescribir la misma variable
+datos_2022 <- datos_2022[complete.cases(datos_2022), ]
+```
+
+*Inspeccionar los niveles de anemia*
+
+```{r}
+unique(datos_2022$anemia)
+```
+
+*Clasificar la anemia*
+
+```{r}
+datos_2022_completo <- datos_2022 %>%
+  mutate(anemia_general = ifelse(anemia %in% c("leve", "moderada", "severa"), 1, 0))
+
+#clasificacion de anemia severa
+datos_2022_severa <- datos_2022 %>% mutate(anemia_severa = ifelse(anemia == "severa", 1, 0))
+```
+
+*Crear rangos de altitud*
+
+```{r}
+datos_2022_completo <- datos_2022_completo %>% mutate(altitud_rango = case_when( altitud < 1500 ~ "Baja (<1500m)", altitud >= 1500 & altitud < 2500 ~ "Media (1500-2500m)", altitud >= 2500 ~ "Alta (≥2500m)" ))
+```
+
+```{r}
+datos_2022_severa <- datos_2022_severa %>% mutate(altitud_rango = case_when( altitud < 1500 ~ "Baja (<1500m)", altitud >= 1500 & altitud < 2500 ~ "Media (1500-2500m)", altitud >= 2500 ~ "Alta (≥2500m)" ))
+```
+
+*Calcular la prevalencia de anemia severa por rango de altitud*
+
+```{r}
+prevalencia <- datos_2022_severa %>% group_by(altitud_rango) %>% summarise( total_gestantes = n(), casos_severa = sum(anemia_severa), prevalencia = (casos_severa / total_gestantes) * 100 )
+
+prevalencia_general <- datos_2022_completo %>%
+  group_by(altitud_rango) %>%
+  summarise(
+    total_gestantes = n(),
+    casos_anemia_general = sum(anemia_general),
+    prevalencia = (casos_anemia_general / total_gestantes) * 100
+  )
+
+```
+
+*Visualizar la tabla de prevalencia*
+
+```{r}
+print(prevalencia)
+```
+
+```{r}
+print(prevalencia_general)
+```
+
+*Grafico de prevalencia general*
+
+```{r}
+prevalencia_filtrada_completo <- prevalencia_general %>%
+  filter(altitud_rango %in% c("Alta (≥2500m)", "Media (1500-2500m)", "Baja (<1500m)")) %>%
+  mutate(altitud_rango = factor(altitud_rango, levels = c("Alta (≥2500m)", "Media (1500-2500m)", "Baja (<1500m)")))
+
+# Crear el gráfico
+ggplot(prevalencia_filtrada_completo, aes(x = altitud_rango, y = prevalencia, fill = altitud_rango)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Prevalencia General de Anemia en Gestantes por Rango de Altitud (2022)",
+    x = "Rango de Altitud",
+    y = "Prevalencia (%)"
+  ) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") # Puedes cambiar el esquema de colores si lo deseas
+
+```
+
+En la grfica se observa la prevalencia general de anemia en mujeres gestantes es significativamente mayor en regiones de alta altitud (≥2500 m), alcanzando un 30%. Este patrón decreciente con la altitud refuerza la importancia de adaptar estrategias de prevención y tratamiento según las características geográficas, priorizando intervenciones en regiones de mayor riesgo.
+
+***Grafico de la prevalencia de anemia severa***
+
+```{r}
+# Reordenar los niveles de altitud_rango en el orden deseado: Alta, Media, Baja
+prevalencia_filtrada <- prevalencia %>%
+  filter(altitud_rango %in% c("Alta (≥2500m)", "Media (1500-2500m)", "Baja (<1500m)")) %>%
+  mutate(altitud_rango = factor(altitud_rango, levels = c("Alta (≥2500m)", "Media (1500-2500m)", "Baja (<1500m)")))
+
+# Crear el gráfico con las categorías reordenadas
+ggplot(prevalencia_filtrada, aes(x = altitud_rango, y = prevalencia, fill = altitud_rango)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Prevalencia de Anemia Severa en Gestantes por Rango de Altitud (2022)",
+    x = "Rango de Altitud",
+    y = "Prevalencia (%)"
+  ) +
+  theme_minimal()
+
+```
+
+La prevalencia de anemia severa en mujeres gestantes es significativamente mayor en altitudes altas (≥2500 m), alcanzando un 0.6%. Esta tendencia decreciente con la altitud refuerza la necesidad de adaptar estrategias de prevención y tratamiento según las características geográficas, priorizando las regiones de mayor riesgo
+
+***Visualizar la regresión lineal***
+
+```{r}
+library(ggplot2)
+# Clasificar edad gestacional por trimestres 
+datos_2022_completo <- datos_2022_completo %>% mutate(trimestre = case_when( edad_gestacional <= 12 ~ "1er Trimestre", edad_gestacional > 12 & edad_gestacional <= 24 ~ "2do Trimestre", edad_gestacional > 24 ~ "3er Trimestre" ))
+
+ggplot(datos_2022_completo, aes(x = edad_gestacional, y = emoglobina)) + geom_point(color = "blue") + geom_smooth(method = "lm", color = "red") + labs( title = "Regresión Lineal: Hemoglobina vs. Edad Gestacional (2022)", x = "Edad Gestacional (semanas)", y = "Niveles de Hemoglobina" ) + theme_minimal()
+
+
+```
+
+***Realizar regresión lineal de hemoglobina con edad gestacional por trimestres***
+
+```{r}
+modelo <- lm(emoglobina ~ edad_gestacional , data = datos_2022_completo)
+summary(modelo)
+```
+
+```{r}
+modelo_multiple <- lm(emoglobina ~ edad_gestacional + edad + altitud + peso + talla , data = datos_2022_completo)
+summary(modelo_multiple)
+```
+
+*Realizamos la una tabla resumen*
+
+```{r}
+# Crear la tabla con los resultados clave del análisis multivariado
+tabla_factores <- data.frame(
+  Factor = c("Edad Gestacional", "Altitud", "Peso Materno", "Edad Materna", "Talla Materna"),
+  `Efecto en Hemoglobina` = c("-0.0325 g/dL por semana", 
+                              "+0.000617 g/dL por metro", 
+                              "+0.01375 g/dL por kilogramo", 
+                              "+0.0052 g/dL por año", 
+                              "No significativo"),
+  Relevancia = c(
+    "Refleja la anemia fisiológica.",
+    "Adaptación fisiológica en regiones altas.",
+    "Impacto del estado nutricional.",
+    "Incremento marginal con mayor edad.",
+    "Sin relevancia estadística."
+  )
+)
+
+# Mostrar la tabla
+print(tabla_factores)
+```
+
+**Modelo Multivariado** (Edad Gestacional + Confusores)
+
+-   **Relación**:
+
+    -   La disminución por semana de embarazo es similar (**-0.0325 g/dL**), pero al ajustar por confusores, el modelo explica un mayor porcentaje de variabilidad (**R² = 38.15%**).
+
+-   **Factores Asociados**:
+
+    -   **Altitud**: Aumenta la hemoglobina en **0.000617 g/dL por metro**, reflejando la adaptación fisiológica a la hipoxia.
+
+    -   **Peso Materno**: Incrementa la hemoglobina en **0.01375 g/dL por kilogramo**, resaltando el impacto del estado nutricional.
+
+    -   **Edad Materna**: Incrementa ligeramente los niveles en **0.0052 g/dL por año**, indicando una mejora marginal con mayor edad.
+
+    -   **Talla Materna**: No tiene un efecto significativo en los niveles de hemoglobina (**p = 0.955**).
+
+***Visualizar la regresión lineal por trimestres***
+
+```{r}
+library(ggplot2)
+
+ggplot(datos_2022_completo, aes(x = edad_gestacional, y = emoglobina, color = trimestre)) + geom_point() + geom_smooth(method = "lm", se = FALSE) + labs( title = "Regresión Lineal: Hemoglobina vs. Edad Gestacional por Trimestres (2022)", x = "Edad Gestacional (semanas)", y = "Niveles de Hemoglobina", color = "Trimestre" ) + theme_minimal()
+```
+
+***Analisis de calor por regiones***
+
+```{r}
+library(dplyr)
+library(stringr)
+library(sf)
+```
+
+```{r}
+shapefile <- "map_dep/Departamental INEI 2023 geogpsperu SuyoPomalia.shp"
+mapa <- read_sf(shapefile)
+# Normaliza ambos nombres (si aún no lo has hecho)
+mapa <- mapa %>%
+  mutate(DEPARTAMEN = str_to_upper(DEPARTAMEN),
+         DEPARTAMEN = str_replace_all(DEPARTAMEN, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
+
+# Calcular la prevalencia de anemia severa por región y altitud
+
+datos_prevalencia <- datos_2022_completo %>% 
+  group_by(Region, altitud_rango) %>% 
+  summarise(
+    total_gestantes = n(),
+    casos = sum(anemia_general, na.rm = TRUE),
+    prevalencia = (casos / total_gestantes) * 100,
+    .groups = "drop")
+datos_prevalencia <- datos_prevalencia %>%
+  mutate(Region = str_to_upper(Region),
+         Region = str_replace_all(Region, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
+# Unir los datos
+mapa_datos <- merge(mapa, datos_prevalencia, by.x = "DEPARTAMEN", by.y = "Region", all.x = TRUE)
+# Rellenar valores NA en prevalencia con 0 o un texto explicativo
+mapa_datos <- mapa_datos %>%
+  mutate(prevalencia = ifelse(is.na(prevalencia), 0, prevalencia))
+
+ggplot(mapa_datos) +
+  geom_sf(aes(fill = prevalencia)) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkblue",
+    limits = c(0, 55), # Ajusta el rango manualmente
+    name = "Prevalencia (%)"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Prevalencia de Anemia Severa por Región en Perú (2022)",
+    fill = "Prevalencia (%)"
+  )
+
+```
+
+```{r}
+shapefile <- "map_dep/Departamental INEI 2023 geogpsperu SuyoPomalia.shp"
+mapa <- read_sf(shapefile)
+# Normaliza ambos nombres (si aún no lo has hecho)
+mapa <- mapa %>%
+  mutate(DEPARTAMEN = str_to_upper(DEPARTAMEN),
+         DEPARTAMEN = str_replace_all(DEPARTAMEN, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
+# Calcular la prevalencia de anemia severa por región y altitud
+datos_prevalencia <- datos_2022_severa %>% 
+  group_by(Region, altitud_rango) %>% 
+  summarise(
+    total_gestantes = n(),
+    casos = sum(anemia_severa, na.rm = TRUE),
+    prevalencia = (casos / total_gestantes) * 100,
+    .groups = "drop")
+datos_prevalencia <- datos_prevalencia %>%
+  mutate(Region = str_to_upper(Region),
+         Region = str_replace_all(Region, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
+# Unir los datos
+mapa_datos <- merge(mapa, datos_prevalencia, by.x = "DEPARTAMEN", by.y = "Region", all.x = TRUE)
+# Rellenar valores NA en prevalencia con 0 o un texto explicativo
+mapa_datos <- mapa_datos %>%
+  mutate(prevalencia = ifelse(is.na(prevalencia), 0, prevalencia))
+
+ggplot(mapa_datos) +
+  geom_sf(aes(fill = prevalencia)) +
+  scale_fill_gradient(
+    low = "white",
+    high = "darkblue",
+    limits = c(0, 1), # Ajusta el rango manualmente
+    name = "Prevalencia (%)"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Prevalencia de Anemia Severa por Región en Perú (2022)",
+    fill = "Prevalencia (%)")
+
+```
+
+#### *Realizamos el calculo de los percentiles.*
+
+```{r}
+percentiles <- datos_2022_completo %>%
+  group_by(edad_gestacional) %>%
+  summarise(
+    P1  = quantile(emoglobina, 0.01, na.rm = TRUE),
+    P10 = quantile(emoglobina, 0.10, na.rm = TRUE),
+    P25 = quantile(emoglobina, 0.25, na.rm = TRUE),
+    P50 = quantile(emoglobina, 0.50, na.rm = TRUE),
+    P75 = quantile(emoglobina, 0.75, na.rm = TRUE),
+    P90 = quantile(emoglobina, 0.90, na.rm = TRUE),
+    P99 = quantile(emoglobina, 0.99, na.rm = TRUE))
+```
+
+```{r}
+percentiles_long <- percentiles %>%
+  pivot_longer(
+    cols = starts_with("P"),
+    names_to = "percentile",
+    values_to = "hemoglobina")
+```
+
+```{r}
+ggplot(percentiles_long, aes(x = edad_gestacional, y = hemoglobina, color = percentile)) +
+    geom_smooth(se = FALSE, method = "loess", size = 1.2, span = 0.32) +
+  labs(
+    title = "Niveles de Hemoglobina por percentil y Edad Gestacional",
+    x = "Edad Gestacional (semanas)",
+    y = "Niveles de Hemoglobina (g/L)",
+    color = "Percentil"
+  ) +
+  scale_color_manual(
+     values = c("#FF0000", "#FF4500", "#FFA500", "#FFFF00", "#32CD32", "#4682B4", "#0000FF"),
+    labels = c("1%", "10%", "25%", "50%", "75%", "90%", "99%")
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    plot.title = element_text(hjust = 0.3),
+    legend.position = "bottom"
+  )+
+  coord_fixed(ratio = 2)
+```
+
+En el grafico se puede apreciar la no linealidad de la anemia durante el embarazo, mostrando cómo los niveles de hemoglobina disminuyen progresivamente con la edad gestacional. La representación por percentiles (1% a 99%) permite visualizar la variabilidad en la población gestante, destacando a los grupos más vulnerables (percentil 1%) que tienen mayores riesgos de desarrollar anemia clínica. Estos resultados resaltan la importancia del monitoreo continuo y de intervenciones específicas para prevenir complicaciones
+
+#### *Niveles de Hemoglobina por Percentil y Edad Gestacional durante el 2016-2022 excluyendo el 2020 donde no se tienen registro. Para ver una comparativa con respecto el 2022*
+
+```{r}
+datos<-datos[complete.cases(datos), ]
+percentiles_general <- datos %>%
+  group_by(edad_gestacional) %>%
+  summarise(
+    P1  = quantile(emoglobina, 0.01, na.rm = TRUE),
+    P10 = quantile(emoglobina, 0.10, na.rm = TRUE),
+    P25 = quantile(emoglobina, 0.25, na.rm = TRUE),
+    P50 = quantile(emoglobina, 0.50, na.rm = TRUE),
+    P75 = quantile(emoglobina, 0.75, na.rm = TRUE),
+    P90 = quantile(emoglobina, 0.90, na.rm = TRUE),
+    P99 = quantile(emoglobina, 0.99, na.rm = TRUE))
+```
+
+```{r}
+percentiles_general <- percentiles_general %>%
+  pivot_longer(
+    cols = starts_with("P"),
+    names_to = "percentile",
+    values_to = "hemoglobina")
+```
+
+```{r}
+ggplot(percentiles_general, aes(x = edad_gestacional, y = hemoglobina, color = percentile)) +
+    geom_smooth(se = FALSE, method = "loess", size = 1.2, span = 0.3, linetype = "solid") +
+    labs(
+        title = "Niveles de Hemoglobina por Percentil y Edad Gestacional",
+        x = "Edad Gestacional (semanas)",
+        y = "Niveles de Hemoglobina (g/L)",
+        color = "Percentil"
+    ) +
+    scale_color_manual(
+        values = c("red", "orange", "yellow", "green", "blue", "purple", "pink"),
+        labels = c("1%", "5%", "10%", "50%", "90%", "95%", "99%")
+    ) +
+    theme_minimal(base_size = 16) +
+    theme(
+        text = element_text(size = 14, family = "Arial"),
+        plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 12),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(size = 0.5, linetype = "dotted")
+    )
+
+# Exportar el gráfico con mayor resolución
+ggsave("niveles_hemoglobina.png", width = 8, height = 6, dpi = 300)
+
+```

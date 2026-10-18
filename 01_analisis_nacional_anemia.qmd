@@ -1,0 +1,538 @@
+---
+title: "Análisis Nacional de Estado Nutricional y Hemoglobina en Gestantes (2016-2023)"
+subtitle: "Procesamiento y Armonización de Datos Oficiales SIEN - INS/CENAN"
+format: html
+editor: visual
+---
+
+```{r}
+library(dplyr)
+library(readr)
+```
+
+## **Sistema de información del Estado Nutricional de niños y gestantes Perú - INS/CENAN (Instituto Nacional de Salud - Centro Nacional de Alimentación y Nutrición)**
+
+Analisis descriptivo
+
+```{r}
+df_2016<- read_csv("all_data_combined_2016.csv")
+df_2017<- read_csv("all_data_combined_2017.csv")
+df_2018<- read_csv("all_data_combined_2018.csv")
+df_2019<- read_csv("all_data_combined_2019.csv")
+df_2021<- read_csv("all_data_combined_2021.csv")
+df_2022<- read_csv("all_data_combined_2022.csv")
+df_2023<- read_csv("all_data_combined_2023.csv")
+```
+
+```{r}
+list_of_dfs <- list(df_2016, df_2017, df_2018, df_2019, df_2021, df_2022, df_2023)
+for(df in list_of_dfs) {
+  print(colnames(df))
+}
+```
+
+```{r}
+names(df_2017)
+unique(substr(df_2016$ubigeo, 1, 3))
+```
+
+Se filtra solo con las variables de interes
+
+```{r}
+#nombres para las columnas
+new_column_names <- c("edad", "peso", "talla", "ppg", "edad_gestacional", "tipo_embarazo", "ubigeo", "hematocrito","emoglobina","altitud","anemia","Lugar")
+list_of_dfs <- list(df_2016, df_2017, df_2018, df_2019, df_2021, df_2022)
+
+for(i in seq_along(list_of_dfs)) {
+  colnames(list_of_dfs[[i]]) <- new_column_names
+}
+
+df_2016 <- list_of_dfs[[1]]
+df_2017 <- list_of_dfs[[2]]
+df_2018 <- list_of_dfs[[3]]
+df_2019 <- list_of_dfs[[4]]
+df_2021 <- list_of_dfs[[5]]
+df_2022 <- list_of_dfs[[6]]
+```
+
+```{r}
+new_column_names <- c("edad", "peso", "talla", "ppg", "edad_gestacional", "tipo_embarazo", "ubigeo","emoglobina","altitud","anemia","Lugar")
+list_of_dfs <- list(df_2023)
+
+for(i in seq_along(list_of_dfs)) {
+  colnames(list_of_dfs[[i]]) <- new_column_names
+}
+
+df_2023 <- list_of_dfs[[1]]
+```
+
+```{r}
+list_of_dfs <- list(df_2016, df_2017, df_2018, df_2019, df_2021, df_2022, df_2023)
+
+years <- c(2016, 2017, 2018, 2019, 2021, 2022, 2023)
+
+
+for(i in seq_along(list_of_dfs)) {
+  list_of_dfs[[i]]$year <- years[i]
+}
+
+df_2016 <- list_of_dfs[[1]]
+df_2017 <- list_of_dfs[[2]]
+df_2018 <- list_of_dfs[[3]]
+df_2019 <- list_of_dfs[[4]]
+df_2021 <- list_of_dfs[[5]]
+df_2022 <- list_of_dfs[[6]]
+df_2023 <- list_of_dfs[[7]]
+```
+
+```{r}
+list_of_dfs <- list(df_2016, df_2017, df_2018, df_2019, df_2021, df_2022)
+
+dft <- do.call(rbind, list_of_dfs) #total de datos
+
+dft$hematocrito <- NULL #eliminamos ematocrito, para poder hacer el analicis con el año 2023
+
+
+```
+
+```{r}
+dft
+df_2023
+```
+
+```{r}
+lis <- list(dft, df_2023)
+
+df <- do.call(rbind, lis)
+```
+
+de esta maner a obtenemos la base de datos completa de los años 2016 a 2023 con con la exepcion del año 2020
+
+```{r}
+df
+```
+
+Limpieza de datos
+
+```{r}
+
+if (!require(ggplot2)) install.packages("ggplot2", dependencies=TRUE)
+
+library(ggplot2)
+
+```
+
+```{r}
+
+boxplot(df$edad)
+```
+
+```{r}
+boxplot(df$peso)
+```
+
+```{r}
+lower_bound <- 30
+upper_bound <- 150
+```
+
+```{r}
+df <- df[df$peso >= lower_bound & df$peso <= upper_bound, ]
+df <- df[df$ppg >= lower_bound & df$ppg <= upper_bound, ]
+```
+
+```{r}
+boxplot(df$peso)
+```
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+```{r}
+df
+```
+
+```{r}
+lower_bound <- 80
+upper_bound <- 220
+boxplot(df$talla)
+```
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+```{r}
+df <- df[df$talla >= lower_bound & df$talla <= upper_bound, ]
+```
+
+```{r}
+boxplot(df$talla)
+```
+
+```{r}
+boxplot(df$ppg)
+boxplot(df$edad_gestacional)
+```
+
+```{r}
+
+lower <- 5
+upper <- 20
+df <- df[df$emoglobina >= lower& df$emoglobina <= upper, ]
+boxplot(df$emoglobina)
+```
+
+```{r}
+boxplot(df$altitud)#n
+```
+
+```{r}
+df
+```
+
+```{r}
+
+df$anemia <- gsub("Anemia ", "", df$anemia)
+df$anemia <- trimws(df$anemia)
+df$anemia[df$anemia == "Leve"] <- "leve"
+df$anemia[df$anemia == "Moderada"] <- "moderada"
+df$anemia[df$anemia == "Severa"] <- "severa"
+df$anemia[df$anemia == "Normal"] <- "normal"
+df$anemia[df$anemia == "Sin Anemia"] <- "normal"
+
+```
+
+```{r}
+
+df$anemia_num <- as.integer(factor(df$anemia, levels = c("normal", "leve", "moderada", "severa"), labels = c(0, 1, 2, 3)))
+
+```
+
+```{r}
+#Val  categorías numricas
+table(df$anemia_num)
+
+```
+
+```{r}
+table(df$Lugar)
+```
+
+```{r}
+
+df$Lugar <- gsub("Gestantes ", "", df$Lugar)
+
+table(df$Lugar)
+
+```
+
+```{r}
+# Supongamos que solo te interesa que las columnas 'edad' y 'peso' estén completas
+df_limpio <- df[complete.cases(df[c("edad", "peso","ppg","edad_gestacional","tipo_embarazo")]), ]
+
+# Verificar las dimensiones del nuevo dataframe
+dim(df_limpio)
+
+
+```
+
+```{r}
+write.csv(df_limpio, "Limpio_2016-2023.csv", row.names = FALSE)
+```
+
+NO TOCAR ARRIBA
+
+Una ves que concluimos la limpieza podemos hacer el analisis estadistico, hallamos las frecuencias, la mediana y el IQR para cada intensiddad de expocicion por cada region.
+
+llammos a nuestra nueva base de datos:
+
+```{r}
+Df<-read_csv("Limpio_2016-2023.csv")
+```
+
+```{r}
+names(Df)
+```
+
+```{r}
+df<-read_csv("Limpio_2016-2023.csv")
+```
+
+Agregamos la columna region segun ubigeo
+
+```{r}
+
+library(dplyr)
+df$ubigeo <- as.character(df$ubigeo)
+df$ubigeo <- sprintf("%06d", as.numeric(df$ubigeo))  # formatear con ceros a la izquierda
+region_names <- setNames(
+  c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", 
+    "Cajamarca", "Callao", "Cusco", "Huancavelica", "Huánuco", 
+    "Ica", "Junín", "La Libertad", "Lambayeque", "Lima", 
+    "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura", 
+    "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali"),
+  sprintf("%02d", 1:25)
+)
+df <- df %>%
+  mutate(Region = region_names[substr(ubigeo, 1, 2)],
+         Region = ifelse(is.na(Region), "Desconocido", Region))  
+
+
+```
+
+```{r}
+#table(df$Region)
+# Asumiendo que 'df' es tu DataFrame y 'ubigeo' la columna que necesita corrección
+#df$ubigeo <- sprintf("%6d", as.numeric(df$ubigeo))
+
+unique(substr(df$ubigeo, 1, 2))
+
+```
+
+Analisis por cada region\
+\
+
+```{r}
+library(dplyr)
+
+analizar_anemia <- function(dfl, region, var_confusora) {
+  df_region <- dfl %>% 
+    filter(Region == region)
+
+  estadisticas_anemia <- df_region %>%
+    group_by(anemia_num) %>%
+    summarise(
+      Cantidad = n(),
+      Frecuencia = Cantidad / sum(Cantidad),
+      Mediana = median(!!sym(var_confusora), na.rm = TRUE),
+      IQR = IQR(!!sym(var_confusora), na.rm = TRUE)
+    )
+  
+  return(estadisticas_anemia)
+}
+
+```
+
+Regiones
+
+```{r}
+resultados_lima <- analizar_anemia(df, "Lima", "edad")
+print(resultados_lima)
+```
+
+```{r}
+
+regiones <- c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca",
+              "Callao", "Cusco", "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad",
+              "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+              "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali")
+
+analisis_regional <- function(region) {
+  analizar_anemia(df, region, "edad")
+}
+
+resultados <- map(regiones, analisis_regional)
+
+resultados_df <- bind_rows(resultados, .id = "Region")
+
+print(resultados_df)
+
+```
+
+```{r}
+write.csv(resultados_df, "resul_x_region.csv", row.names = FALSE)
+```
+
+```{r}
+
+regiones <- c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca",
+              "Callao", "Cusco", "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad",
+              "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+              "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali")
+
+analisis_regional <- function(region) {
+  analizar_anemia(df, region, "peso")
+}
+
+resultados <- map(regiones, analisis_regional)
+
+resultados_df <- bind_rows(resultados, .id = "Region")
+
+print(resultados_df)
+
+```
+
+```{r}
+
+
+regiones <- c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca",
+              "Callao", "Cusco", "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad",
+              "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+              "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali")
+
+analisis_regional <- function(region) {
+  analizar_anemia(df, region, "talla")
+}
+
+resultados <- map(regiones, analisis_regional)
+
+resultados_df <- bind_rows(resultados, .id = "Region")
+
+print(resultados_df)
+
+```
+
+```{r}
+library(dplyr)
+library(purrr)
+
+regiones <- c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca",
+              "Callao", "Cusco", "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad",
+              "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+              "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali")
+
+analisis_regional <- function(region) {
+  analizar_anemia(df, region, "ppg")
+}
+
+resultados <- map(regiones, analisis_regional)
+
+resultados_df <- bind_rows(resultados, .id = "Region")
+
+print(resultados_df)
+
+```
+
+```{r}
+library(dplyr)
+library(purrr)
+
+regiones <- c("Amazonas", "Áncash", "Apurímac", "Arequipa", "Ayacucho", "Cajamarca",
+              "Callao", "Cusco", "Huancavelica", "Huánuco", "Ica", "Junín", "La Libertad",
+              "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+              "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali")
+
+analisis_regional <- function(region) {
+  analizar_anemia(df, region, "altitud")
+}
+
+resultados <- map(regiones, analisis_regional)
+
+resultados_df <- bind_rows(resultados, .id = "Region")
+
+print(resultados_df)
+
+```
+
+ahora el analisis gener por tipo de intensidad de anemia,
+
+```{r}
+
+total_observaciones <- nrow(df)
+
+resultado_edad <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(edad, na.rm = TRUE), 
+    MedianaEdad = median(edad, na.rm = TRUE),  
+    IQR = IQR(edad, na.rm = TRUE), 
+    .groups = 'drop'  # Eliminar el agrupamiento después del resumen
+  )
+
+print(resultado_edad)
+
+
+```
+
+```{r}
+total_observaciones <- nrow(df)
+
+resultado_peso <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(peso, na.rm = TRUE), 
+    MedianaEdad = median(peso, na.rm = TRUE),  
+    IQR = IQR(peso, na.rm = TRUE), 
+    .groups = 'drop'  # Eliminar el agrupamiento después del resumen
+  )
+
+print(resultado_peso)
+
+```
+
+```{r}
+total_observaciones <- nrow(df)
+
+resultado_ppg <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(ppg, na.rm = TRUE), 
+    MedianaEdad = median(ppg, na.rm = TRUE),  
+    IQR = IQR(ppg, na.rm = TRUE), 
+    .groups = 'drop'  # Eliminar el agrupamiento después del resumen
+  )
+
+print(resultado_ppg)
+
+```
+
+```{r}
+total_observaciones <- nrow(df)
+
+resultado_talla <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(talla, na.rm = TRUE), 
+    MedianaEdad = median(talla, na.rm = TRUE),  
+    IQR = IQR(talla, na.rm = TRUE), 
+    .groups = 'drop'  # Eliminar el agrupamiento después del resumen
+  )
+
+print(resultado_talla)
+
+```
+
+```{r}
+total_observaciones <- nrow(df)
+resultado_talla <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(talla, na.rm = TRUE), 
+    MedianaEdad = median(talla, na.rm = TRUE),  
+    IQR = IQR(talla, na.rm = TRUE), 
+    .groups = 'drop'
+  )
+
+print(resultado_talla)
+
+```
+
+```{r}
+total_observaciones <- nrow(df)
+
+resultado_altitud <- df %>%
+  group_by(anemia_num) %>%
+  summarise(
+    Cantidad = n(), 
+    Frecuencia = Cantidad / total_observaciones,
+    MediaEdad = mean(altitud, na.rm = TRUE), 
+    MedianaEdad = median(altitud, na.rm = TRUE),  
+    IQR = IQR(altitud, na.rm = TRUE), 
+    .groups = 'drop'  # Eliminar el agrupamiento después del resumen
+  )
+
+print(resultado_altitud)
+
+```
