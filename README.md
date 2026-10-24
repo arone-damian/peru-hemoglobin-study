@@ -1,87 +1,90 @@
-# Non-linear Association Between Hemoglobin Levels and Gestational Age in Peruvian Pregnant Women
+# Non-Linear Association Between Hemoglobin Levels and Gestational Age in Peruvian Pregnant Women
 
-## Project Overview
+**National Cross-Sectional & Longitudinal Epidemiological Study (SIEN – INS/CENAN, 2016–2022)**
 
-This research investigates the non-linear associations between gestational age and hemoglobin levels among pregnant women in Peru, considering critical environmental and maternal factors. Using a comprehensive national dataset of **114,000 pregnant women** from 2022 (Peruvian Ministry of Health - MINSA), this study examines how altitude, maternal age, height, and weight influence hemoglobin concentrations throughout pregnancy.
+## Executive Summary
 
-**Key Findings:**
-- **Anemia prevalence increases with altitude**: 5.4% (<1500m), 7.2% (1500–2500m), and 10.8% (>2500m).
-- **Hemoglobin decreases progressively with gestational age**: weekly reduction of 0.031 g/dL (simple model) and 0.032 g/dL (adjusted model).
-- **Significant interaction** between altitude and gestational age (p < 0.01), meaning the physiological changes during pregnancy are modulated by environmental hypoxia.
+Gestational anemia is a critical public health challenge associated with low birth weight, preterm delivery, and maternal mortality. Standard World Health Organization (WHO) reference thresholds are primarily derived from European and North American populations and do not fully capture the physiological adaptations driven by extreme geographical variability and high-altitude hypoxia across Peru's coastal, Andean, and Amazonian regions.
 
----
+This study evaluates the non-linear trajectory of maternal hemoglobin levels across gestational age and quantifies the effect of residential altitude and maternal anthropometric factors using nationwide surveillance records from Peru's **Nutritional Status Information System (SIEN – INS/CENAN)**.
 
-## Objectives
+## Key Quantitative Findings
 
-**Primary Objective:**
-- Analyze the association between gestational age and hemoglobin levels in pregnant women in Peru during 2022, adjusting for altitude, weight, height, and maternal age.
+* **Physiological Hemodilution Across Gestation:** In both bivariate and multivariate linear regression models, maternal hemoglobin decreases by **-0.0325 g/dL per week of gestational age** ($p < 0.001$), reflecting physiological plasma volume expansion during pregnancy.
+* **High-Altitude Hypoxia Adaptation:** Residential altitude exerts a statistically significant positive effect on maternal hemoglobin (**+0.000617 g/dL per meter of elevation**, $p < 0.001$). Accounting for altitude and maternal covariates explains **$R^2 = 38.15\%$** of total hemoglobin variance.
+* **Elevated Prevalence in Andean Regions ($\ge 2,500\text{ m}$):** Overall gestational anemia prevalence reaches **30.0%** in high-altitude settlements ($\ge 2,500\text{ m.a.s.l.}$), with severe anemia reaching **0.6%** in these high-risk zones.
+* **Maternal Nutritional Status:** Maternal weight is positively associated with hemoglobin concentration (**+0.01375 g/dL per kg**, $p < 0.001$), and maternal age shows a modest positive association (**+0.0052 g/dL per year**), whereas maternal height shows no statistically significant effect ($p = 0.955$).
 
-**Secondary Objectives:**
-- Determine the prevalence of severe anemia across different altitude ranges.
-- Describe the distribution of hemoglobin levels by pregnancy trimester.
-- Evaluate the adjusted relationship between gestational age and hemoglobin levels.
+## Multivariate Regression Model Summary
 
----
+| Predictor Variable | Estimated Effect on Hemoglobin | Statistical & Clinical Interpretation |
+| :--- | :---: | :--- |
+| **Gestational Age (weeks)** | -0.0325 g/dL per week | Captures progressive physiological hemodilution across trimesters |
+| **Residential Altitude (meters)** | +0.000617 g/dL per meter | Reflects erythropoietic adaptation to chronic high-altitude hypoxia |
+| **Maternal Weight (kg)** | +0.01375 g/dL per kg | Demonstrates the protective effect of maternal nutritional reserves |
+| **Maternal Age (years)** | +0.0052 g/dL per year | Indicates a marginal positive increase with maternal age |
+| **Maternal Height (cm)** | Not significant ($p = 0.955$) | No statistically significant independent effect on hemoglobin |
 
-## 📊 Methodology
+*Model fit: Multiple linear regression adjusted for gestational age, residential altitude, maternal weight, age, and height ($R^2 = 38.15\%$, 2022 complete-case national cohort).*
 
-### Study Design
-- Cross-sectional study using secondary data from the Peruvian Ministry of Health (MINSA) open data repository (2022).
+## Visual Highlights
 
-### Population and Sample
-- **114,000 pregnant women** from all regions of Peru with complete records of:
-  - Hemoglobin (g/dL)
-  - Gestational age (weeks)
-  - Maternal age (years)
-  - Weight (kg) and height (cm)
-  - Altitude of residence (masl)
+### 1. Non-Linear Hemoglobin Percentile Curves Across Gestational Age (LOESS)
+Non-parametric Locally Estimated Scatterplot Smoothing (`LOESS`, $\text{span} = 0.30$) across empirical percentiles ($P_{1}$ to $P_{99}$) reveals the non-linear physiological drop during the second trimester and identifies high-risk clinical trajectories in the lowest percentiles ($P_{1}$ and $P_{5}$).
 
-### Variables
-- **Dependent**: Hemoglobin levels (g/dL).
-- **Independent**: Gestational age (weeks), maternal age (years), altitude (masl), weight (kg), height (cm).
-- **Additional**: Anemia classification according to WHO trimester-specific thresholds.
 
-### Statistical Analysis
-| Step | Method |
-|------|--------|
-| Descriptive | Anemia prevalence by altitude ranges (<1500m, 1500–2500m, ≥2500m) |
-| Simple regression | Unadjusted effect of gestational age on hemoglobin |
-| Multiple regression | Adjusted for confounders (age, BMI, altitude) |
-| Interaction test | Altitude × gestational age interaction (p < 0.01) |
 
-### Tools
-- **R Programming** with `dplyr` (data manipulation) and `ggplot2` (visualization).
+### 2. Linear Regression of Hemoglobin by Pregnancy Trimester
+Stratified linear trends across the 1st ($\le 12$ weeks), 2nd ($13\text{–}24$ weeks), and 3rd ($> 24$ weeks) trimesters demonstrate the sharpest decline during the প্রথম and second trimesters followed by stabilization in late pregnancy.
 
----
 
-## 📈 Key Results
 
-### Hemoglobin and Anemia by Altitude
+### 3. Geospatial Distribution of Gestational Anemia Across Peruvian Departments (2022)
+Choropleth mapping combining SIEN epidemiological records with official INEI departmental boundary shapefiles highlights the geographical concentration of anemia across highland regions.
 
-| Altitude Range | Mean Hb (g/dL) | Anemia Prevalence |
-|----------------|---------------|-------------------|
-| <1500 m        | 12.3          | 5.4%              |
-| 1500–2500 m    | 11.7          | 7.2%              |
-| ≥2500 m        | 10.9          | 10.8%             |
 
-### Gestational Age Effect
-- **Simple linear regression**: −0.031 g/dL per week (p < 0.05).
-- **Adjusted multiple regression**: −0.032 g/dL per week, confirming that altitude and maternal characteristics significantly modulate this relationship.
 
-### Interaction
-- The inclusion of an altitude × gestational age interaction term was **significant (p < 0.01)**, indicating that the impact of gestational age on hemoglobin depends on the altitude of residence.
+## Tech Stack & Statistical Methods
 
----
+* **Language & Reporting:** R, RStudio, Quarto (`.qmd`)
+* **Data Wrangling & Manipulation:** `tidyverse`, `dplyr`, `readr`, `tidyr`, `stringr`, `haven`
+* **Statistical Modeling:** Ordinary Least Squares (OLS) Simple & Multiple Linear Regression (`stats::lm`), Non-parametric Local Regression (`LOESS` quantile smoothing)
+* **Geospatial & Visual Analytics:** `sf` (Simple Features for spatial vector data), `ggplot2`, `RColorBrewer`
 
-## 🏥 Public Health Implications
+## Repository Structure
 
-1. **Altitude‑adjusted protocols**: Regions above 2500m require more aggressive screening and iron supplementation.
-2. **Continuous monitoring**: Regular hemoglobin measurements throughout pregnancy are essential.
-3. **Policy recommendations**:
-   - Develop region‑specific reference ranges for hemoglobin.
-   - Integrate altitude into national prenatal care guidelines.
-   - Address socioeconomic and dietary determinants in future research.
+```text
+peru-hemoglobin-study/
+├── 01_analisis_nacional_anemia.qmd   # Multi-year data ingestion & harmonization pipeline (2016–2023)
+├── Proyecto_final_bio.qmd            # Statistical modeling, spatial epidemiology & percentile curves
+├── figures/                          # High-resolution visualizations exported from the study
+│   ├── niveles_hemoglobina.png
+│   ├── regresion_trimestres.png
+│   └── mapa_prevalencia_peru.png
+├── .gitignore                        # Excludes raw large CSV files and local R session artifacts
+├── licence.txt                       # MIT License
+└── README.md                         # Project documentation and executive report
+```
 
----
+## How to Reproduce the Analysis
 
-## 💻 Repository Structure
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/arone-damian/peru-hemoglobin-study.git
+   cd peru-hemoglobin-study
+   ```
+2. **Install required R packages:**
+   ```r
+   install.packages(c("tidyverse", "haven", "sf", "RColorBrewer", "knitr", "kableExtra"))
+   ```
+3. **Render the Quarto notebooks:**
+   Place the harmonized dataset (`Limpio.csv`) and departmental shapefile (`map_dep/`) in the root directory, then execute:
+   ```bash
+   quarto render Proyecto_final_bio.qmd
+   ```
+
+## Public Health Policy Recommendations
+
+1. **Altitude-Specific Clinical Thresholds:** Tailor anemia screening and iron supplementation protocols to regional elevation profiles rather than relying solely on unadjusted international cutoffs.
+2. **Trimester-Targeted Surveillance:** Prioritize early second-trimester hemoglobin monitoring when physiological hemodilution accelerates the steepest decline.
+3. **Regional Resource Prioritization:** Focus maternal nutrition interventions in Andean departments located at $\ge 2,500\text{ m.a.s.l.}$, where overall anemia prevalence reaches 30%.
