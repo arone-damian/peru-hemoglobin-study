@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Non-Linear Association Between Hemoglobin Levels and Gestational Age in Peruvian Pregnant Women
 
 **National Cross-Sectional & Longitudinal Epidemiological Study (SIEN – INS/CENAN, 2016–2022)**
@@ -88,3 +89,7 @@ peru-hemoglobin-study/
 1. **Altitude-Specific Clinical Thresholds:** Tailor anemia screening and iron supplementation protocols to regional elevation profiles rather than relying solely on unadjusted international cutoffs.
 2. **Trimester-Targeted Surveillance:** Prioritize early second-trimester hemoglobin monitoring when physiological hemodilution accelerates the steepest decline.
 3. **Regional Resource Prioritization:** Focus maternal nutrition interventions in Andean departments located at $\ge 2,500\text{ m.a.s.l.}$, where overall anemia prevalence reaches 30%.
+=======
+# peru-hemoglobin-study
+Cross-sectional analysis of hemoglobin levels and gestational anemia prevalence across altitudinal strata in Peru.
+>>>>>>> parent of 9136f19 (Update README.md)
