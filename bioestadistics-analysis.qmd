@@ -1,9 +1,6 @@
-## 
-
 ---
-title: "Modelado Bioestadístico de Hemoglobina y Altitud en Gestantes Peruanas"
-subtitle: "Prevalencia, Regresión Multivariada y Curvas de Percentiles"
-format: html
+title: "-"
+format: revealjs
 editor: visual
 ---
 
@@ -267,45 +264,6 @@ ggplot(mapa_datos) +
 
 ```
 
-```{r}
-shapefile <- "map_dep/Departamental INEI 2023 geogpsperu SuyoPomalia.shp"
-mapa <- read_sf(shapefile)
-# Normaliza ambos nombres (si aún no lo has hecho)
-mapa <- mapa %>%
-  mutate(DEPARTAMEN = str_to_upper(DEPARTAMEN),
-         DEPARTAMEN = str_replace_all(DEPARTAMEN, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
-# Calcular la prevalencia de anemia severa por región y altitud
-datos_prevalencia <- datos_2022_severa %>% 
-  group_by(Region, altitud_rango) %>% 
-  summarise(
-    total_gestantes = n(),
-    casos = sum(anemia_severa, na.rm = TRUE),
-    prevalencia = (casos / total_gestantes) * 100,
-    .groups = "drop")
-datos_prevalencia <- datos_prevalencia %>%
-  mutate(Region = str_to_upper(Region),
-         Region = str_replace_all(Region, "[ÁÉÍÓÚ]", function(x) chartr("ÁÉÍÓÚ", "AEIOU", x)))
-# Unir los datos
-mapa_datos <- merge(mapa, datos_prevalencia, by.x = "DEPARTAMEN", by.y = "Region", all.x = TRUE)
-# Rellenar valores NA en prevalencia con 0 o un texto explicativo
-mapa_datos <- mapa_datos %>%
-  mutate(prevalencia = ifelse(is.na(prevalencia), 0, prevalencia))
-
-ggplot(mapa_datos) +
-  geom_sf(aes(fill = prevalencia)) +
-  scale_fill_gradient(
-    low = "white",
-    high = "darkblue",
-    limits = c(0, 1), # Ajusta el rango manualmente
-    name = "Prevalencia (%)"
-  ) +
-  theme_minimal() +
-  labs(
-    title = "Prevalencia de Anemia Severa por Región en Perú (2022)",
-    fill = "Prevalencia (%)")
-
-```
-
 #### *Realizamos el calculo de los percentiles.*
 
 ```{r}
@@ -353,7 +311,7 @@ ggplot(percentiles_long, aes(x = edad_gestacional, y = hemoglobina, color = perc
 
 En el grafico se puede apreciar la no linealidad de la anemia durante el embarazo, mostrando cómo los niveles de hemoglobina disminuyen progresivamente con la edad gestacional. La representación por percentiles (1% a 99%) permite visualizar la variabilidad en la población gestante, destacando a los grupos más vulnerables (percentil 1%) que tienen mayores riesgos de desarrollar anemia clínica. Estos resultados resaltan la importancia del monitoreo continuo y de intervenciones específicas para prevenir complicaciones
 
-#### *Niveles de Hemoglobina por Percentil y Edad Gestacional durante el 2016-2022 excluyendo el 2020 donde no se tienen registro. Para ver una comparativa con respecto el 2022*
+***Niveles de Hemoglobina por Percentil y Edad Gestacional durante el 2016-2022 excluyendo el 2020 donde no se tienen registro. Para ver una comparativa con respecto el 2022***
 
 ```{r}
 datos<-datos[complete.cases(datos), ]
@@ -400,7 +358,24 @@ ggplot(percentiles_general, aes(x = edad_gestacional, y = hemoglobina, color = p
         panel.grid.major = element_line(size = 0.5, linetype = "dotted")
     )
 
-# Exportar el gráfico con mayor resolución
-ggsave("niveles_hemoglobina.png", width = 8, height = 6, dpi = 300)
-
 ```
+
+***CONCLUSIONES***
+
+Edad gestacional: Existe una relación significativa entre la edad gestacional y los niveles de hemoglobina, con una disminución progresiva a medida que avanza el embarazo.
+
+Altitud: La prevalencia de anemia severa es mayor en gestantes que residen a mayor altitud, lo que resalta la influencia del entorno geográfico en los niveles de hemoglobina.
+
+Factores maternos: Variables como el peso y la edad también afectan los niveles de hemoglobina, mientras que la talla no tuvo un impacto significativo.
+
+Modelo predictivo: Incluir múltiples factores mejora considerablemente la capacidad de explicar las variaciones en los niveles de hemoglobina.
+
+***Recomendaciones:***
+
+Atención diferenciada por altitud: Adaptar las estrategias de prevención y tratamiento de anemia gestacional según las características geográficas, priorizando las regiones de mayor altitud.
+
+Monitoreo continuo: Realizar mediciones regulares de hemoglobina a lo largo del embarazo para detectar y tratar oportunamente los casos de anemia severa.
+
+Investigaciones futuras: Ampliar los estudios para incluir factores nutricionales, acceso a servicios de salud y otros determinantes sociales que puedan influir en los niveles de hemoglobina en gestantes peruanas.
+
+Políticas basadas en evidencia: Ajustar los rangos de referencia de hemoglobina para gestantes en el Perú, considerando las particularidades del contexto socioeconómico y geográfico.
